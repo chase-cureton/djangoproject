@@ -32,6 +32,9 @@ ALLOWED_HOSTS = []
 # Application definition
 # Any apps created need to be referenced here
 INSTALLED_APPS = [
+    'materializecssform',
+    'widget_tweaks',
+    'api',
     'posts',
     'django.contrib.admin',
     'django.contrib.auth',
