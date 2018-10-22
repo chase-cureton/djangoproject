@@ -9,6 +9,6 @@ class Posts(models.Model):
     attachment_path = models.URLField(default="https://google.com")
     created_at = models.DateTimeField(default=datetime.now, blank=True)
     def __str__(self):
-        return self.title
+        return '%s %s' % (self.title, self.body)
     class Meta:
         verbose_name_plural = "Posts"
