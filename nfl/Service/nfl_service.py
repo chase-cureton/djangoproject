@@ -8,17 +8,47 @@ def get_players(limit=None, **filters):
         return Player.objects.filter(**filters)[:limit]
     return Player.objects.filter(**filters)
 
-def import_past_games(season, season_type, week=0, current_week=1):
-    URL = "http://www.nfl.com/ajax/scorestrip?season=%s&seasonType=%s&week=%s" % (season, season_type, week)
+def ImportPastGames(season=2018, season_type='REG', week=0, current_week=8):
 
+    while week < current_week:
+        URL = "http://www.nfl.com/ajax/scorestrip?season=%s&seasonType=%s&week=%s" % (season, season_type, week)
+
+        week = week + 1
+        ImportPastGames(week=week)
+        ImportGamesForWeek(URL)
+
+def ImportGamesForWeek(URL):
     r = requests.get(allow_redirects=False, url=URL)
     gameXML = ET.fromstring(r.text)
 
-    for child in gameXML:
-        print (child.tag, child.attribute)
+    for games in gameXML:
+        print ('Tag: %s - Attrib: %s' % (games.tag, games.attrib))
 
+        week = games.get('w')
 
-def import_current_games():
+        for game in games.findall('g'):
+            print ('Tag: %s - Attrib: %s' % (game.tag, game.attrib))
+
+            eid = game.get('eid')
+            home_team = game.get('hnn')
+            home_team_score = game.get('hs')
+            away_team = game.get('vnn')
+            away_team_score = game.get('vs')
+
+            dbGame = Game.objects.all().filter(eid=eid)
+
+            if dbGame:
+                print('Do nothing, already exists')
+            else:
+                game = Game(eid=eid, week=week,
+                            homeTeam=home_team, homeTeamScore=home_team_score,
+                            awayTeam=away_team, awayTeamScore=away_team_score)
+                game.save()
+            
+            dbGame = Game.objects.get(eid=eid)
+            ImportGameDetails(dbGame)
+
+def ImportCurrentGames():
     #URL = "http://www.nfl.com/liveupdate/scorestrip/ss.json"
     URL = "http://www.nfl.com/liveupdate/scorestrip?season=201818&seasonType=REG&week=7/ss.json"
 
@@ -30,7 +60,7 @@ def import_current_games():
             game['hnn'], game['hs'], game['vnn'], game['vs']
         ))
 
-        dbGame = Game.objects.all().filter(homeTeam=game['hnn'], week=gameJSON['w'])
+        dbGame = Game.objects.all().filter(eid=game['eid'])
         #dbGame = Game.objects.get(homeTeam=game['hnn'], week=gameJSON['w'])
 
         if dbGame:
@@ -52,10 +82,9 @@ def import_current_games():
         print('Saved game to db(%s)' % (dbGame))
     
         print (dbGame)
-        import_game_details(dbGame)
+        ImportGameDetails(dbGame)
 
-
-def import_game_details(dbGame):
+def ImportGameDetails(dbGame):
     URL = "http://www.nfl.com/liveupdate/game-center/%s/%s_gtd.json" % (dbGame.eid, dbGame.eid)
     #URL = "http://www.nfl.com/liveupdate/game-center/2018102101/2018102101_gtd.json"
 
@@ -66,25 +95,25 @@ def import_game_details(dbGame):
 
     #print (gameDetailsJSON)
 
-    # passing stats (Home)
-    upsert_passing_stats(gameDetailsJSON, dbGame, 'home')
-    upsert_passing_stats(gameDetailsJSON, dbGame, 'away')
+    # passing stats
+    UpsertPassingStats(gameDetailsJSON, dbGame, 'home')
+    UpsertPassingStats(gameDetailsJSON, dbGame, 'away')
 
-def upsert_passing_stats(gameDetailsJSON, dbGame, location):
+    # rushing stats
+    UpsertRushingStats(gameDetailsJSON, dbGame, 'home')
+    UpsertRushingStats(gameDetailsJSON, dbGame, 'away')
+
+    # receiving stats
+    UpsertReceivingStats(gameDetailsJSON, dbGame, 'home')
+    UpsertReceivingStats(gameDetailsJSON, dbGame, 'away')
+
+def UpsertPassingStats(gameDetailsJSON, dbGame, location):
     for nfl_id in gameDetailsJSON['%s' % dbGame.eid][location]['stats']['passing']:
         passing_stats = gameDetailsJSON['%s' % dbGame.eid][location]['stats']['passing']['%s' % nfl_id]
 
         print ('Passing Stats: %s' % passing_stats)
 
-        dbPlayer = Player.objects.all().filter(nfl_id=nfl_id)
-
-        if dbPlayer:
-            dbPlayer = Player.objects.get(nfl_id=nfl_id)
-            dbPlayer.currentTeam = dbGame.homeTeam
-            dbPlayer.shortName = passing_stats['name']
-        else:
-            dbPlayer = Player(shortName=passing_stats['name'], nfl_id=nfl_id)
-            dbPlayer.save()
+        dbPlayer = UpsertPlayer(nfl_id, location, dbGame, passing_stats)
 
         offense_stats = Game_Offense_Stats.objects.all().filter(player_nfl_id=dbPlayer.nfl_id, game_eid=dbGame.eid)
 
@@ -104,7 +133,72 @@ def upsert_passing_stats(gameDetailsJSON, dbGame, location):
 
         print (offense_stats)
 
-def print_player_stats():
+def UpsertRushingStats(gameDetailsJSON, dbGame, location):
+    for nfl_id in gameDetailsJSON['%s' % dbGame.eid][location]['stats']['rushing']:
+        rushing_stats = gameDetailsJSON['%s' % dbGame.eid][location]['stats']['rushing']['%s' % nfl_id]
+
+        #print ('Rushing Stats: %s' % rushing_stats)
+
+        dbPlayer = UpsertPlayer(nfl_id, location, dbGame, rushing_stats)
+
+        offense_stats = Game_Offense_Stats.objects.all().filter(player_nfl_id=dbPlayer.nfl_id, game_eid=dbGame.eid)
+
+        if offense_stats:
+            offense_stats = Game_Offense_Stats.objects.get(player_nfl_id=dbPlayer.nfl_id, game_eid=dbGame.eid)
+            offense_stats.rush_attempts = rushing_stats['att']
+            offense_stats.rush_yards = rushing_stats['yds']
+            offense_stats.rush_tds = rushing_stats['tds']
+            offense_stats.longest_rush = rushing_stats['lng']
+            offense_stats.longest_rush_td = rushing_stats['lngtd']
+        else:
+            offense_stats = Game_Offense_Stats(player_nfl_id=dbPlayer.nfl_id, game_eid=dbGame.eid, 
+                                               rush_attempts=rushing_stats['att'],
+                                               rush_yards=rushing_stats['yds'], rush_tds=rushing_stats['tds'],
+                                               longest_rush=rushing_stats['lng'], longest_rush_td=rushing_stats['lngtd'])
+            offense_stats.save()
+
+        #print (offense_stats)
+
+def UpsertReceivingStats(gameDetailsJSON, dbGame, location):
+    for nfl_id in gameDetailsJSON['%s' % dbGame.eid][location]['stats']['receiving']:
+        receiving_stats = gameDetailsJSON['%s' % dbGame.eid][location]['stats']['receiving']['%s' % nfl_id]
+
+        #print ('Receiving Stats: %s' % receiving_stats)
+
+        dbPlayer = UpsertPlayer(nfl_id, location, dbGame, receiving_stats)
+
+        offense_stats = Game_Offense_Stats.objects.all().filter(player_nfl_id=dbPlayer.nfl_id, game_eid=dbGame.eid)
+
+        if offense_stats:
+            offense_stats = Game_Offense_Stats.objects.get(player_nfl_id=dbPlayer.nfl_id, game_eid=dbGame.eid)
+            offense_stats.rec_yards = receiving_stats['yds']
+            offense_stats.rec_tds = receiving_stats['tds']
+            offense_stats.longest_rec = receiving_stats['lng']
+            offense_stats.longest_rec_td = receiving_stats['lngtd']
+        else:
+            offense_stats = Game_Offense_Stats(player_nfl_id=dbPlayer.nfl_id, game_eid=dbGame.eid, 
+                                               rec_yards=receiving_stats['yds'], rec_tds=receiving_stats['tds'],
+                                               longest_rec=receiving_stats['lng'], longest_rec_td=receiving_stats['lngtd'])
+            offense_stats.save()
+
+        #print (offense_stats)
+
+def UpsertPlayer(nfl_id, location, dbGame, stats):
+    dbPlayer = Player.objects.all().filter(nfl_id=nfl_id)
+
+    if dbPlayer:
+        dbPlayer = Player.objects.get(nfl_id=nfl_id)
+        dbPlayer.currentTeam = dbGame.homeTeam if location == "home" else dbGame.awayTeam
+        dbPlayer.shortName = stats['name']
+        dbPlayer.save()
+    else:
+        dbPlayer = Player(shortName=stats['name'], nfl_id=nfl_id,
+                          currentTeam=dbGame.homeTeam if location == "home" else dbGame.awayTeam)
+        dbPlayer.save()
+
+    return dbPlayer
+
+def PrintPlayerStats():
     dbPlayers = Player.objects.all()
     dbGameStats = Game_Offense_Stats.objects.all()
 

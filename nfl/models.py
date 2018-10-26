@@ -36,7 +36,7 @@ class Game(models.Model):
     week = models.IntegerField(default=0)
     eid = models.IntegerField(default=0)
     def __str__(self):
-        return '%s: %s - %s: %s' % (self.homeTeam, self.homeTeamScore, self.awayTeam, self.awayTeamScore)
+        return 'Week %s - %s: %s - %s: %s' % (self.week, self.homeTeam, self.homeTeamScore, self.awayTeam, self.awayTeamScore)
 
 class Game_Offense_Stats(models.Model):
     objects = models.Manager()
@@ -55,11 +55,16 @@ class Game_Offense_Stats(models.Model):
     rush_attempts = models.IntegerField(default=0)
     rush_yards = models.IntegerField(default=0)
     rush_tds = models.IntegerField(default=0)
+    longest_rush = models.IntegerField(default=0)
+    longest_rush_td = models.IntegerField(default=0)
 
     #Receiving Stats
     receptions = models.IntegerField(default=0)
     rec_yards = models.IntegerField(default=0)
     rec_tds = models.IntegerField(default=0)
+    longest_rec = models.IntegerField(default=0)
+    longest_rec_td = models.IntegerField(default=0)
+
 
     def __str__(self):
         return '%s: Pass yds: %s - Rush yds: %s - Rec yds: %s' % (self.player_nfl_id, self.pass_yards, self.rush_yards, self.rec_yards)
