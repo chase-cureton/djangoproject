@@ -1,0 +1,22 @@
+version: '3.1'
+services:
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: mydb101
+      POSTGRES_USER: chase
+      POSTGRES_DB: djangoproject
+    volumes: 
+      - /database/nfl/data:/var/lib/postgresql/data
+  web:
+    build: .
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db

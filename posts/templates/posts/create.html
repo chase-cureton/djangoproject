@@ -24,9 +24,11 @@
                 <a class="btn" href="/posts/create">Post</a>
         </div> -->
         {% csrf_token %}
-        {% load materializecss %}
+        <!-- {% load materializecss %} -->
 
         {{ form | materializecss }}
+
+        <!-- {{ form }} -->
 
         <!-- <div class="row">
             <div class="file-field input-field">

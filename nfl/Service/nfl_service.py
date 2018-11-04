@@ -49,8 +49,8 @@ def ImportGamesForWeek(URL):
             ImportGameDetails(dbGame)
 
 def ImportCurrentGames():
-    #URL = "http://www.nfl.com/liveupdate/scorestrip/ss.json"
-    URL = "http://www.nfl.com/liveupdate/scorestrip?season=201818&seasonType=REG&week=7/ss.json"
+    URL = "http://www.nfl.com/liveupdate/scorestrip/ss.json"
+    #URL = "http://www.nfl.com/liveupdate/scorestrip?season=201818&seasonType=REG&week=7/ss.json"
 
     r = requests.get(allow_redirects=False, url = URL)
     gameJSON = json.loads(r.text)
@@ -89,23 +89,26 @@ def ImportGameDetails(dbGame):
     #URL = "http://www.nfl.com/liveupdate/game-center/2018102101/2018102101_gtd.json"
 
     print ('URL: %s' % URL)
-
     r = requests.get(url = URL)
-    gameDetailsJSON = json.loads(r.text)
 
-    #print (gameDetailsJSON)
+    print ('Request Status: %s' % r.status_code)
 
-    # passing stats
-    UpsertPassingStats(gameDetailsJSON, dbGame, 'home')
-    UpsertPassingStats(gameDetailsJSON, dbGame, 'away')
+    if (r.status_code == 200):
+        gameDetailsJSON = json.loads(r.text)
 
-    # rushing stats
-    UpsertRushingStats(gameDetailsJSON, dbGame, 'home')
-    UpsertRushingStats(gameDetailsJSON, dbGame, 'away')
+        # passing stats
+        UpsertPassingStats(gameDetailsJSON, dbGame, 'home')
+        UpsertPassingStats(gameDetailsJSON, dbGame, 'away')
 
-    # receiving stats
-    UpsertReceivingStats(gameDetailsJSON, dbGame, 'home')
-    UpsertReceivingStats(gameDetailsJSON, dbGame, 'away')
+        # rushing stats
+        UpsertRushingStats(gameDetailsJSON, dbGame, 'home')
+        UpsertRushingStats(gameDetailsJSON, dbGame, 'away')
+
+        # receiving stats
+        UpsertReceivingStats(gameDetailsJSON, dbGame, 'home')
+        UpsertReceivingStats(gameDetailsJSON, dbGame, 'away')
+    else:
+        print ('Game(%s) has not started' % dbGame.eid)
 
 def UpsertPassingStats(gameDetailsJSON, dbGame, location):
     for nfl_id in gameDetailsJSON['%s' % dbGame.eid][location]['stats']['passing']:
