@@ -16,11 +16,11 @@ async def on_message(message):
     if message.author == client.user:
         return
     
-    if message.content.startswith('!hello cap'):
+    if message.content.startswith('*hello cap'):
         msg = 'Hello {0.author.mention}'.format(message)
         await client.send_message(message.channel, msg)
 
-    if message.content.startswith('!top'):
+    if message.content.startswith('*top'):
         init, count, pos, week_identifier, week = message.content.split(" ")
         print("Action: ", init)
         print("Count: ", count)
