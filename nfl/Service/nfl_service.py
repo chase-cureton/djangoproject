@@ -1,4 +1,6 @@
 from nfl.models import Player,Game,Game_Offense_Stats
+from operator import attrgetter
+import itertools
 import requests
 import json
 import xml.etree.ElementTree as ET
@@ -200,6 +202,29 @@ def UpsertPlayer(nfl_id, location, dbGame, stats):
         dbPlayer.save()
 
     return dbPlayer
+
+def GetTopPlayers(stat_type, count, week):
+    games = Game.objects.filter(week=week)
+    print(games)
+
+    game_eids = games.values('eid')
+
+    if 'rec' in stat_type:
+        game_stats = Game_Offense_Stats.objects.order_by('-rec_yards').filter(game_eid__in=game_eids)[:count]
+    if 'pass' in stat_type:
+        game_stats = Game_Offense_Stats.objects.order_by('-pass_yards').filter(game_eid__in=game_eids)[:count]
+    if 'rush' in stat_type:
+        game_stats = Game_Offense_Stats.objects.order_by('-rush_yards').filter(game_eid__in=game_eids)[:count]
+
+    print(game_stats)
+
+    for stats in game_stats:
+        stats.player = Player.objects.get(nfl_id=stats.player_nfl_id)
+
+    for stats in game_stats:
+        print(stats.player.shortName)
+
+    return game_stats
 
 def PrintPlayerStats():
     dbPlayers = Player.objects.all()
