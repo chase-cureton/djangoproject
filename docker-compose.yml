@@ -8,12 +8,12 @@ services:
     environment:
       POSTGRES_PASSWORD: mydb101
       POSTGRES_USER: chase
-      POSTGRES_DB: djangoproject
+      POSTGRES_DB: nflproject
     volumes: 
       - /database/nfl/data:/var/lib/postgresql/data
   web:
     build: .
-    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/code
     ports:

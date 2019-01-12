@@ -32,19 +32,20 @@ ALLOWED_HOSTS = []
 # Application definition
 # Any apps created need to be referenced here
 INSTALLED_APPS = [
-    'requests',
-    'nfl',
     'materializecssform',
     'widget_tweaks',
-    'api',
-    'posts',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'discord'
+    'discord',
+    'authentication',
+    'requests',
+    'nfl',
+    'api',
+    'posts'
 ]
 
 #Order of middleware is important because they depend on eachother
@@ -85,7 +86,7 @@ WSGI_APPLICATION = 'djangoproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'djangoproject',
+        'NAME': 'nflproject',
         'USER': 'chase',
         'PASSWORD': 'mydb101',
         'HOST': 'db',
@@ -145,3 +146,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Sets custom Account object as authentication model
+AUTH_USER_MODEL = 'authentication.Account'
