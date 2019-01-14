@@ -8,15 +8,31 @@ services:
     environment:
       POSTGRES_PASSWORD: mydb101
       POSTGRES_USER: chase
-      POSTGRES_DB: nflproject
+      POSTGRES_DB: djangoproject
     volumes: 
       - /database/nfl/data:/var/lib/postgresql/data
   web:
     build: .
-    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    #command: bash -c "python manage.py makemigrations && python manage.py migrate authentication && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
+    #command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    #command: bash -c "python manage.py migrate admin zero && python manage.py migrate auth zero && python manage.py migrate contenttypes zero && python manage.py migrate sessions zero"
     volumes:
       - .:/code
     ports:
       - "8000:8000"
     depends_on:
       - db
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: chase.cureton@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    volumes:
+      - /data/pgadmin:/root/.pgadmin
+    ports:
+      - "5050:80"
+    restart: always
+    restart: unless-stopped

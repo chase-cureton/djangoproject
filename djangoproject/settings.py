@@ -13,8 +13,8 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+#BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
@@ -26,26 +26,29 @@ SECRET_KEY = '%8yk7vgc4tue_ckw_%&z2=oft+x70j%0lh-ur&6#&3(q9g)vfs'
 DEBUG = True
 
 #Domain names when deploying applications go here!
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 # Any apps created need to be referenced here
 INSTALLED_APPS = [
-    'materializecssform',
-    'widget_tweaks',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'templates',
     'discord',
     'authentication',
     'requests',
     'nfl',
     'api',
-    'posts'
+    'posts',
+    'rest_framework',
+    'compressor',
+    'materializecssform',
+    'widget_tweaks',
 ]
 
 #Order of middleware is important because they depend on eachother
@@ -86,7 +89,7 @@ WSGI_APPLICATION = 'djangoproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'nflproject',
+        'NAME': 'djangoproject',
         'USER': 'chase',
         'PASSWORD': 'mydb101',
         'HOST': 'db',
@@ -146,6 +149,32 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = 'staticfiles'
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
+STATICFILES_FINDERS = {
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
+}
+
+COMPRESS_ENABLED = os.environ.get('COMPRESS_ENABLED', False)
+
+TEMPLATE_DIRS = [
+    os.path.join(BASE_DIR, 'templates'),
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication'
+    )
+}
+
+# Honor the 'X-Forwarded-Proto' header for request.is_secure()
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Sets custom Account object as authentication model
 AUTH_USER_MODEL = 'authentication.Account'

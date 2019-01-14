@@ -17,10 +17,19 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from django.urls import path
 
+from rest_framework import routers
+
+from authentication.views import AccountViewSet, IndexView
+
+router = routers.SimpleRouter()
+router.register(r'accounts', AccountViewSet)
+
 urlpatterns = [
+    url(r'^api/v1/', include(router.urls)),
     url(r'^', include('posts.urls')),
-    url(r'^', include('nfl.urls')),
+    #url(r'^', include('nfl.urls')),
     #path('admin/', admin.site.urls),
-    path('posts/', include('posts.urls')),
-    path('player/', include('nfl.urls')),
+    #path('posts/', include('posts.urls')),
+    #path('player/', include('nfl.urls')),
+    url(r'^.*$', IndexView.as_view(), name='index'),
 ]
