@@ -39,10 +39,10 @@ RUN source ${NVM_DIR}/nvm.sh \
 ENV NODE_PATH = $NVM_DIR/v${NODE_VERSION}/lib/node_modules
 ENV PATH $NVM_DIR/versions/node/v${NODE_VERSION}/bin:${PATH}
 
+ADD . /code/
 #RUN npm install
 RUN npm install -g bower
-#RUN bower install
-ADD . /code/
+RUN bower install --allow-root --force-latest
 
 # RUN apt-get update \
 #     && apt-get install -y --no-install-recommends \
@@ -60,5 +60,6 @@ ADD . /code/
 
 #EXPOSE 8000
 
-#RUN python manage.py runserver 
+RUN python manage.py runserver 
+RUN python migrate
 #CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

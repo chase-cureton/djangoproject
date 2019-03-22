@@ -6,7 +6,7 @@ import os, types
 
 from nfl.Service import nfl_service
 
-TOKEN = 'NTA4NzEwNTU0NzIzMDI0OTIw.DxwMcA.8a0gvrHIzIlT-UNRapMiXjG3qyE'
+TOKEN = 'NTA4NzEwNTU0NzIzMDI0OTIw.Dx2Ftw.CptJVbX1Jd0-B-M1Vc-jCc3i-lU'
 HOST = 'https://discordapp.com/api/webhooks/508683529354477582/M8IeOwF_E25nm7tkdHuiyBRiuycbE3ByXk1kv0W3JCMDNt5e-DQb7P8spm8pkzRmPuTQ'
 
 client = discord.Client()
